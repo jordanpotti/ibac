@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light only">
+  <title>IBAC — Intent-Based Access Control</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafaf8;
+      --bg-alt: #f2f1ed;
+      --text: #1a1a18;
+      --text-secondary: #5c5c57;
+      --accent: #c43d2e;
+      --border: #ddddd8;
+      --code-bg: #1e1e1c;
+      --code-text: #d4d4c8;
+      --serif: 'Source Serif 4', Georgia, serif;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'DM Sans', system-ui, sans-serif;
+      color-scheme: light only;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--serif);
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topbar { border-bottom: 1px solid var(--border); padding: 14px 0; position: sticky; top: 0; background: var(--bg); z-index: 100; }
+    .topbar-inner { max-width: 820px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .topbar-logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: 0.08em; color: var(--text); text-decoration: none; flex-shrink: 0; }
+    .topbar-logo span { color: var(--accent); }
+    .topbar-links { display: flex; gap: 28px; list-style: none; }
+    .topbar-links a { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--text-secondary); text-decoration: none; letter-spacing: 0.02em; transition: color 0.2s; }
+    .topbar-links a:hover { color: var(--accent); }
+
+    .hero { max-width: 820px; margin: 0 auto; padding: 80px 24px 60px; }
+    .hero-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; display: block; }
+    .hero h1 { font-family: var(--serif); font-size: clamp(26px, 4vw, 42px); font-weight: 700; line-height: 1.2; margin-bottom: 16px; max-width: 700px; letter-spacing: -0.01em; }
+    .hero-subtitle { font-family: var(--serif); font-size: clamp(16px, 2.5vw, 18px); color: var(--text-secondary); font-weight: 300; line-height: 1.6; max-width: 600px; }
+    .hero-meta { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 24px 32px; }
+    .hero-meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .hero-meta-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); }
+    .hero-meta-value { font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--text); }
+    .hero-meta-value a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--border); transition: text-decoration-color 0.2s; }
+    .hero-meta-value a:hover { text-decoration-color: var(--accent); }
+
+    .links-row { max-width: 820px; margin: 0 auto; padding: 0 24px 60px; display: flex; flex-wrap: wrap; gap: 12px; }
+    .link-btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 6px; text-decoration: none; transition: all 0.2s; }
+    .link-btn.primary { background: var(--text); color: var(--bg); }
+    .link-btn.primary:hover { background: var(--accent); }
+    .link-btn.secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .link-btn.secondary:hover { border-color: var(--text-secondary); }
+    .link-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .section { max-width: 820px; margin: 0 auto; padding: 0 24px 60px; }
+    .section-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; display: block; }
+    .abstract-text { font-size: 16px; line-height: 1.8; color: var(--text); max-width: 680px; }
+    .abstract-text strong { font-weight: 600; }
+    .abstract-text code { font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px; word-break: break-all; }
+
+    .results-strip { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 48px 24px; margin-bottom: 60px; }
+    .results-inner { max-width: 820px; margin: 0 auto; }
+    .results-inner .section-label { margin-bottom: 28px; }
+    .results-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .result-card { background: var(--bg); padding: 24px; display: flex; flex-direction: column; gap: 6px; }
+    .result-number { font-family: var(--mono); font-size: 32px; font-weight: 500; color: var(--text); letter-spacing: -0.02em; }
+    .result-number.highlight { color: var(--accent); }
+    .result-label { font-family: var(--sans); font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+    .result-context { font-family: var(--sans); font-size: 11px; color: var(--text-secondary); opacity: 0.7; }
+
+    .diagram-section { max-width: 820px; margin: 0 auto; padding: 0 24px 60px; }
+    .diagram-box { background: var(--code-bg); border-radius: 10px; padding: 40px 32px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    .properties-list { display: flex; flex-direction: column; gap: 24px; max-width: 680px; }
+    .property { padding-left: 20px; border-left: 2px solid var(--border); transition: border-color 0.2s; }
+    .property:hover { border-left-color: var(--accent); }
+    .property-name { font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .property-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
+    .modes-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 4px; }
+    .mode-card { border: 1px solid var(--border); border-radius: 8px; padding: 24px; background: var(--bg); transition: border-color 0.2s; }
+    .mode-card:hover { border-color: var(--text-secondary); }
+    .mode-name { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+    .mode-desc { font-family: var(--sans); font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .mode-tag { display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; margin-top: 12px; }
+    .mode-tag.strict { background: #fde8e6; color: #9e2e22; }
+    .mode-tag.permissive { background: #e6f4ea; color: #2d6a3f; }
+
+    .integration-section { max-width: 820px; margin: 0 auto; padding: 0 24px 60px; }
+    .integration-steps { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: start; margin-top: 4px; }
+    .integration-step { border: 1px solid var(--border); border-radius: 8px; padding: 24px; background: var(--bg); }
+    .integration-step-number { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 8px; display: block; }
+    .integration-step-title { font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .integration-step-desc { font-family: var(--sans); font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; }
+    .integration-step-code { font-family: var(--mono); font-size: 12px; background: var(--code-bg); color: var(--code-text); padding: 14px 16px; border-radius: 6px; line-height: 1.6; white-space: pre; overflow-x: auto; }
+    .integration-step-code .kw { color: #c678dd; }
+    .integration-step-code .fn { color: #61afef; }
+    .integration-step-code .str { color: #98c379; }
+    .integration-step-code .cm { color: #5c6370; }
+    .integration-arrow { display: flex; align-items: center; justify-content: center; padding-top: 60px; color: var(--text-secondary); font-size: 24px; }
+
+    .comparison-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 4px; }
+    .comparison-table { width: 100%; border-collapse: collapse; font-family: var(--sans); font-size: 13px; min-width: 560px; }
+    .comparison-table th { text-align: left; font-weight: 600; padding: 12px 16px; border-bottom: 2px solid var(--border); color: var(--text); font-size: 12px; letter-spacing: 0.02em; }
+    .comparison-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); line-height: 1.5; vertical-align: top; }
+    .comparison-table tr:last-child td { border-bottom: none; }
+    .comparison-table td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+
+    .footer { border-top: 1px solid var(--border); padding: 40px 24px; margin-top: 20px; }
+    .footer-inner { max-width: 820px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .footer-left { font-family: var(--sans); font-size: 13px; color: var(--text-secondary); }
+    .footer-left a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--border); }
+    .footer-left a:hover { text-decoration-color: var(--accent); }
+    .footer-right { font-family: var(--mono); font-size: 11px; color: var(--text-secondary); opacity: 0.6; }
+
+    @media (max-width: 720px) {
+      .topbar-links { gap: 14px; }
+      .topbar-links a { font-size: 12px; }
+      .hero { padding: 48px 20px 40px; }
+      .hero-meta { gap: 16px 24px; }
+      .hero-meta-item { min-width: calc(50% - 12px); }
+      .links-row { padding: 0 20px 48px; }
+      .link-btn { flex: 1 1 auto; justify-content: center; padding: 12px 16px; }
+      .section { padding: 0 20px 48px; }
+      .results-strip { padding: 36px 20px; }
+      .results-grid { grid-template-columns: repeat(2, 1fr); }
+      .result-number { font-size: 26px; }
+      .result-card { padding: 18px; }
+      .diagram-box { padding: 24px 16px; }
+      .modes-grid { grid-template-columns: 1fr; }
+      .integration-steps { grid-template-columns: 1fr; }
+      .integration-arrow { padding-top: 0; transform: rotate(90deg); }
+    }
+    @media (max-width: 420px) {
+      .topbar-inner { padding: 0 16px; }
+      .topbar-links { gap: 10px; }
+      .topbar-links a { font-size: 11px; }
+      .hero { padding: 32px 16px 28px; }
+      .hero-label { font-size: 10px; margin-bottom: 14px; }
+      .hero-subtitle { font-size: 15px; }
+      .hero-meta { gap: 12px 16px; }
+      .hero-meta-item { min-width: calc(50% - 8px); }
+      .links-row { padding: 0 16px 32px; gap: 8px; }
+      .link-btn { font-size: 12px; padding: 11px 14px; }
+      .section { padding: 0 16px 40px; }
+      .section-label { font-size: 10px; }
+      .abstract-text { font-size: 15px; }
+      .abstract-text code { font-size: 11px; }
+      .results-strip { padding: 28px 16px; }
+      .results-inner .section-label { margin-bottom: 18px; }
+      .result-number { font-size: 22px; }
+      .result-card { padding: 14px; }
+      .result-label { font-size: 11px; }
+      .result-context { font-size: 10px; }
+      .diagram-section { padding: 0 16px 40px; }
+      .diagram-box { padding: 16px 10px; border-radius: 8px; }
+      .property { padding-left: 14px; }
+      .property-name { font-size: 13px; }
+      .property-desc { font-size: 13px; }
+      .mode-card { padding: 18px; }
+      .mode-name { font-size: 12px; }
+      .mode-desc { font-size: 12px; }
+      .integration-section { padding: 0 16px 40px; }
+      .integration-step { padding: 18px; }
+      .integration-step-title { font-size: 14px; }
+      .integration-step-desc { font-size: 12px; }
+      .integration-step-code { font-size: 11px; padding: 10px 12px; }
+      .comparison-table { font-size: 12px; min-width: 480px; }
+      .comparison-table td, .comparison-table th { padding: 10px 10px; }
+      .footer { padding: 28px 16px; }
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #fafaf8; --bg-alt: #f2f1ed; --text: #1a1a18; --text-secondary: #5c5c57; --accent: #c43d2e; --border: #ddddd8; --code-bg: #1e1e1c; --code-text: #d4d4c8; color-scheme: light only; }
+      body { background: #fafaf8 !important; color: #1a1a18 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="topbar">
+    <div class="topbar-inner">
+      <a href="#" class="topbar-logo">IBAC<span>.</span>dev</a>
+      <ul class="topbar-links">
+        <li><a href="#abstract">Abstract</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#results">Results</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <span class="hero-label">Research Paper — 2026</span>
+    <h1>Intent-Based Access Control: Securing Agentic AI Through Fine-Grained Authorization</h1>
+    <p class="hero-subtitle">Two integration points. Write FGA tuples after intent parsing. Check them before every tool call. Prompt injection becomes irrelevant—no custom interpreter, no dual-LLM architecture, no framework changes.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Author</span>
+        <span class="hero-meta-value"><a href="mailto:potti.jordan@gmail.com">Jordan Potti</a></span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Date</span>
+        <span class="hero-meta-value">March 2026</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Built on</span>
+        <span class="hero-meta-value"><a href="https://openfga.dev" target="_blank">OpenFGA</a></span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="hero-meta-label">Status</span>
+        <span class="hero-meta-value">Reference implementation available</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="links-row">
+    <a href="ibac-paper.pdf" class="link-btn primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Read Paper (PDF)
+    </a>
+    <a href="ibac-paper.tex" class="link-btn secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+      LaTeX Source
+    </a>
+  </div>
+
+  <section class="section" id="abstract">
+    <span class="section-label">Abstract</span>
+    <div class="abstract-text">
+      <p>Every production defense against prompt injection—input filters, LLM-as-a-judge, output classifiers—tries to make the AI smarter about detecting attacks. <strong>Intent-Based Access Control (IBAC)</strong> makes attacks irrelevant. IBAC derives per-request permissions from the user's explicit intent, enforces them deterministically at every tool invocation, and blocks unauthorized actions regardless of how thoroughly injected instructions compromise the LLM's reasoning.</p>
+      <br>
+      <p>The implementation is two steps: parse the user's intent into FGA tuples (<code>email:send#bob@company.com</code>), then check those tuples before every tool call. One extra LLM call. One ~9ms authorization check. No custom interpreter, no dual-LLM architecture, no changes to your agent framework.</p>
+    </div>
+  </section>
+
+  <section class="integration-section" id="integration">
+    <span class="section-label">Implementation</span>
+    <div class="integration-steps">
+      <div class="integration-step">
+        <span class="integration-step-number">STEP 1</span>
+        <div class="integration-step-title">Write tuples after intent parsing</div>
+        <div class="integration-step-desc">A dedicated LLM call parses the user's message into specific capabilities. Write them as FGA tuples before the agent touches any tools.</div>
+        <div class="integration-step-code"><span class="cm">// "Email Bob the report"</span>
+<span class="kw">await</span> fga.<span class="fn">write</span>([
+  { user: reqId, relation: <span class="str">"can_invoke"</span>,
+    object: <span class="str">"email:send#bob@co.com"</span> },
+  { user: reqId, relation: <span class="str">"can_invoke"</span>,
+    object: <span class="str">"file:read#/docs/report.pdf"</span> },
+])</div>
+      </div>
+      <div class="integration-arrow">&rarr;</div>
+      <div class="integration-step">
+        <span class="integration-step-number">STEP 2</span>
+        <div class="integration-step-title">Check tuples before every tool call</div>
+        <div class="integration-step-desc">Wrap your tool executor. Every invocation hits OpenFGA before it runs. Denied calls surface an escalation prompt to the user.</div>
+        <div class="integration-step-code"><span class="kw">const</span> { allowed } = <span class="kw">await</span> fga.<span class="fn">check</span>({
+  user: reqId,
+  relation: <span class="str">"can_invoke"</span>,
+  object: <span class="str">`${agent}:${tool}#${resource}`</span>,
+})
+<span class="kw">if</span> (!allowed) <span class="kw">return</span> { denied: <span class="kw">true</span>,
+  canEscalate: !isBlocked }</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="results-strip" id="results">
+    <div class="results-inner">
+      <span class="section-label">AgentDojo Benchmark — 240 injection runs</span>
+      <div class="results-grid">
+        <div class="result-card">
+          <span class="result-number highlight">100%</span>
+          <span class="result-label">Security (Strict)</span>
+          <span class="result-context">All 240 injection attempts blocked</span>
+        </div>
+        <div class="result-card">
+          <span class="result-number">98.8%</span>
+          <span class="result-label">Security (Permissive)</span>
+          <span class="result-context">3 breaches from over-scoped wildcards</span>
+        </div>
+        <div class="result-card">
+          <span class="result-number">~9ms</span>
+          <span class="result-label">Auth Latency</span>
+          <span class="result-context">Per tool invocation via OpenFGA</span>
+        </div>
+        <div class="result-card">
+          <span class="result-number">0</span>
+          <span class="result-label">Framework Changes</span>
+          <span class="result-context">Wraps existing tool-calling agents</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="diagram-section" id="architecture">
+    <span class="section-label">Architecture</span>
+    <div class="diagram-box">
+      <svg viewBox="0 0 680 660" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+        <!-- Box 1: User Request -->
+        <rect x="40" y="10" width="600" height="56" rx="6" stroke="#4a4a44" stroke-width="1.5" fill="#28282a"/>
+        <text x="60" y="33" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#61afef">User Request</text>
+        <text x="60" y="52" font-family="JetBrains Mono, monospace" font-size="10" fill="#6c6c65">"Email Bob the summary of /docs/report.pdf"</text>
+
+        <!-- Arrow 1 -->
+        <line x1="340" y1="66" x2="340" y2="94" stroke="#6c6c65" stroke-width="1.5"/>
+        <polygon points="334,90 340,100 346,90" fill="#6c6c65"/>
+
+        <!-- Box 2: Request Context -->
+        <rect x="40" y="100" width="600" height="56" rx="6" stroke="#4a4a44" stroke-width="1.5" fill="#28282a"/>
+        <text x="60" y="123" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#e5c07b">Request Context</text>
+        <text x="240" y="123" font-family="JetBrains Mono, monospace" font-size="10" fill="#6c6c65">(trusted: contacts, files, calendar)</text>
+        <text x="60" y="143" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">Bob → bob@company.com    report → /docs/report.pdf</text>
+
+        <!-- Arrow 2 -->
+        <line x1="340" y1="156" x2="340" y2="184" stroke="#6c6c65" stroke-width="1.5"/>
+        <polygon points="334,180 340,190 346,180" fill="#6c6c65"/>
+
+        <!-- Box 3: Intent Parser -->
+        <rect x="40" y="190" width="600" height="138" rx="6" stroke="#4a4a44" stroke-width="1.5" fill="#28282a"/>
+        <text x="60" y="215" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#98c379">Intent Parser</text>
+        <text x="200" y="215" font-family="JetBrains Mono, monospace" font-size="10" fill="#6c6c65">(dedicated LLM · hardened prompt · scope mode)</text>
+        <text x="60" y="245" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">→ Plan: resolve contact → read file → send email</text>
+        <text x="60" y="268" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">→ Tuples:</text>
+        <text x="85" y="288" font-family="JetBrains Mono, monospace" font-size="10" fill="#98c379">contacts:lookup#bob</text>
+        <text x="85" y="304" font-family="JetBrains Mono, monospace" font-size="10" fill="#98c379">file:read#/docs/report.pdf</text>
+        <text x="85" y="320" font-family="JetBrains Mono, monospace" font-size="10" fill="#98c379">email:send#bob@company.com</text>
+
+        <!-- Arrow 3 -->
+        <line x1="340" y1="328" x2="340" y2="356" stroke="#6c6c65" stroke-width="1.5"/>
+        <polygon points="334,352 340,362 346,352" fill="#6c6c65"/>
+        <text x="354" y="348" font-family="JetBrains Mono, monospace" font-size="10" fill="#6c6c65">write tuples</text>
+
+        <!-- Box 4: OpenFGA -->
+        <rect x="140" y="362" width="400" height="66" rx="6" stroke="#4a4a44" stroke-width="1.5" fill="#28282a"/>
+        <text x="170" y="387" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#61afef">OpenFGA</text>
+        <text x="170" y="407" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">Fine-Grained Authorization Engine</text>
+        <text x="170" y="421" font-family="JetBrains Mono, monospace" font-size="10" fill="#6c6c65">(deterministic check per tool call)</text>
+
+        <!-- Arrow 4 -->
+        <line x1="340" y1="428" x2="340" y2="456" stroke="#6c6c65" stroke-width="1.5"/>
+        <polygon points="334,452 340,462 346,452" fill="#6c6c65"/>
+        <text x="354" y="448" font-family="JetBrains Mono, monospace" font-size="10" fill="#6c6c65">check on every invocation</text>
+
+        <!-- Box 5: Agent Execution -->
+        <rect x="40" y="462" width="600" height="140" rx="6" stroke="#4a4a44" stroke-width="1.5" fill="#28282a"/>
+        <text x="60" y="487" font-family="JetBrains Mono, monospace" font-size="13" font-weight="500" fill="#61afef">Agent Execution</text>
+
+        <text x="60" y="517" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">file:read#/docs/report.pdf</text>
+        <text x="380" y="517" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">→</text>
+        <text x="400" y="517" font-family="JetBrains Mono, monospace" font-size="10" fill="#98c379">✓ allowed</text>
+
+        <text x="60" y="540" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">email:send#bob@company.com</text>
+        <text x="380" y="540" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">→</text>
+        <text x="400" y="540" font-family="JetBrains Mono, monospace" font-size="10" fill="#98c379">✓ allowed</text>
+
+        <text x="60" y="563" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">email:send#attacker@evil.com</text>
+        <text x="380" y="563" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">→</text>
+        <text x="400" y="563" font-family="JetBrains Mono, monospace" font-size="10" fill="#e06c60">✗ denied</text>
+        <text x="490" y="563" font-family="JetBrains Mono, monospace" font-size="10" fill="#6c6c65">(injection blocked)</text>
+
+        <text x="60" y="586" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">shell:exec#*</text>
+        <text x="380" y="586" font-family="JetBrains Mono, monospace" font-size="10" fill="#d4d4c8">→</text>
+        <text x="400" y="586" font-family="JetBrains Mono, monospace" font-size="10" fill="#e06c60">✗ blocklisted</text>
+      </svg>
+    </div>
+  </section>
+
+  <section class="section">
+    <span class="section-label">Security Properties</span>
+    <div class="properties-list">
+      <div class="property">
+        <div class="property-name">Capability Confinement</div>
+        <div class="property-desc">Tools only execute within the granted scope. The FGA engine is the sole arbiter — the LLM agent has no write access to the authorization store.</div>
+      </div>
+      <div class="property">
+        <div class="property-name">Injection Resistance</div>
+        <div class="property-desc">Authorization tuples are fixed before untrusted content is processed. Injected instructions that manipulate the agent's reasoning still fail at the authorization boundary — including argument substitution attacks.</div>
+      </div>
+      <div class="property">
+        <div class="property-name">Escalation Safety</div>
+        <div class="property-desc">Permission expansion requires explicit user approval, mediated by the intent parser. Escalation prompts name the specific resource requested, making malicious escalations visible.</div>
+      </div>
+      <div class="property">
+        <div class="property-name">Temporal Isolation</div>
+        <div class="property-desc">Capabilities expire via configurable TTL enforced natively by OpenFGA conditional tuples. No permission persists beyond its conversational relevance.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <span class="section-label">Scope Interpretation Modes</span>
+    <div class="modes-grid">
+      <div class="mode-card">
+        <div class="mode-name">Strict</div>
+        <div class="mode-desc">Only explicitly stated actions. Minimal authorization surface. Denied calls trigger escalation prompts — the user approves obvious prerequisites, rejects suspicious ones. 100% security, 33.3% automated utility rising to ~80% with escalation.</div>
+        <span class="mode-tag strict">Financial · Healthcare · Gov</span>
+      </div>
+      <div class="mode-card">
+        <div class="mode-name">Permissive</div>
+        <div class="mode-desc">Stated actions, prerequisites, and reasonable implied actions. Fewer escalations, wider authorization surface. 98.8% security, 65.8% utility — the 3 breaches traced to wildcard permissions, not authorization bypass.</div>
+        <span class="mode-tag permissive">Consumer · General-purpose</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <span class="section-label">Comparison to CaMeL</span>
+    <div class="comparison-table-wrap">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>IBAC</th>
+            <th>CaMeL <span style="font-weight:400;color:var(--text-secondary)">(DeepMind, 2025)</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mechanism</td>
+            <td>FGA tuples derived from intent, checked at tool boundary</td>
+            <td>Custom Python interpreter with capability-tagged variables</td>
+          </tr>
+          <tr>
+            <td>LLM Architecture</td>
+            <td>Single intent-parsing call</td>
+            <td>Dual LLM (Privileged + Quarantined)</td>
+          </tr>
+          <tr>
+            <td>Injection Defense</td>
+            <td>Authorization check blocks unauthorized tool + resource combinations</td>
+            <td>Data flow taint tracking prevents tainted values from reaching sensitive sinks</td>
+          </tr>
+          <tr>
+            <td>Dynamic Permissions</td>
+            <td>Escalation protocol with user approval via intent parser</td>
+            <td>Static — capabilities fixed at program generation</td>
+          </tr>
+          <tr>
+            <td>Integration</td>
+            <td>Wraps existing tool-calling agents; standards-based FGA</td>
+            <td>Requires custom interpreter and dual-LLM setup</td>
+          </tr>
+          <tr>
+            <td>Stronger At</td>
+            <td>Retrofitting, auditability, dynamic scope, operational tooling</td>
+            <td>Intra-argument data provenance, multi-step taint propagation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <a href="mailto:potti.jordan@gmail.com">Jordan Potti</a>
+      </div>
+      <div class="footer-right">2026</div>
+    </div>
+  </footer>
+
+</body>
+</html>
